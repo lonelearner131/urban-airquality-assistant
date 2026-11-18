@@ -6,7 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9_Strict-blue)](https://www.typescriptlang.org/)
 [![Vitest](https://img.shields.io/badge/Vitest-Coverage_%3E80%25-green)](https://vitest.dev/)
 
- **Live Demo:** [Just Click Here bro!](https://urban-airquality-assistant.vercel.app/)
+**Live Demo:** [Just Click Here bro!](https://urban-airquality-assistant.vercel.app/)
 
 **SmogShield** is a production-grade, privacy-first, GenAI-powered web application engineered to protect urban families and neighborhood communities facing hazardous winter smog and extreme particulate pollution (e.g., Delhi-NCR, Lahore, and smog-impacted metropolitan areas worldwide).
 
