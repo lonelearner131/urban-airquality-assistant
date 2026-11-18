@@ -217,15 +217,9 @@ function CommuteAndCookingGrid({
         options={COMMUTE_OPTIONS}
       />
       <Select
-        label="Cooking Fuel"
-        value={state.cookingFuel}
-        onChange={(e) => update("cookingFuel", e.target.value as ProfileInput["cookingFuel"])}
-        options={COOKING_OPTIONS}
-      />
-      <Select
         label="Heating Method"
         value={state.heatingMethod}
-        onChange={(e) => update("heatingMethod", e.target.value as ProfileInput["heatingMethod"])}
+        onChange={(e) => update("heatingMethod", e.target.value as NonNullable<ProfileInput["heatingMethod"]>)}
         options={HEATING_OPTIONS}
       />
     </>
