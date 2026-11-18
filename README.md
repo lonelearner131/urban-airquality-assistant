@@ -154,7 +154,6 @@ SmogShield grounds every recommendation and calculation in peer-reviewed environ
    ```
    This executes: `format:check` $\to$ `lint` $\to$ `typecheck` $\to$ `test:coverage` $\to$ `build`.
 
-
 ## 📜 Medical & Statutory Disclaimer
 
 _SmogShield provides environmental information, particulate exposure models, and lifestyle risk-reduction suggestions based on open data from Open-Meteo and scientific research. It does not provide medical diagnosis, treatment, or clinical advice. Individuals with underlying cardiovascular or chronic respiratory conditions (e.g. COPD, asthma) should consult their physician. GRAP stage enforcement should be verified with the official CAQM portal._
