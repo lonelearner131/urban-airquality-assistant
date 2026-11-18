@@ -114,6 +114,39 @@ function PlanResultsDashboard({ plan, language }: DashboardProps): React.JSX.Ele
   );
 }
 
+function MainContent({
+  language,
+  plan,
+  isLoading,
+  error,
+  resultsRef,
+  onSubmit,
+}: {
+  readonly language: "en" | "hi";
+  readonly plan: CompletePlan | null;
+  readonly isLoading: boolean;
+  readonly error: string | null;
+  readonly resultsRef: React.RefObject<HTMLDivElement | null>;
+  readonly onSubmit: (profile: ProfileInput) => void;
+}): React.JSX.Element {
+  return (
+    <main id="main-content" className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8">
+      <HeroBanner language={language} />
+      <Disclaimer language={language} />
+      <ProfileForm onSubmit={onSubmit} isLoading={isLoading} language={language} />
+      {error && (
+        <Alert variant="danger" title="Unable to Generate Plan" className="mt-4">
+          <p>{error}</p>
+        </Alert>
+      )}
+      {isLoading && <PlanLoadingSkeleton />}
+      <div ref={resultsRef} tabIndex={-1} aria-label="Generated Action Plan Results" className="outline-none">
+        {plan && !isLoading && <PlanResultsDashboard plan={plan} language={language} />}
+      </div>
+    </main>
+  );
+}
+
 export default function Home(): React.JSX.Element {
   const [language, setLanguage] = useState<"en" | "hi">("en");
   const { plan, isLoading, error, fetchPlan } = usePlan();
@@ -130,35 +163,14 @@ export default function Home(): React.JSX.Element {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
       <Header language={language} onLanguageChange={setLanguage} />
-      <main
-        id="main-content"
-        className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8"
-      >
-        <HeroBanner language={language} />
-        <Disclaimer language={language} />
-        <ProfileForm
-          onSubmit={(profile) => void handleProfileSubmit(profile)}
-          isLoading={isLoading}
-          language={language}
-        />
-
-        {error && (
-          <Alert variant="danger" title="Unable to Generate Plan" className="mt-4">
-            <p>{error}</p>
-          </Alert>
-        )}
-
-        {isLoading && <PlanLoadingSkeleton />}
-
-        <div
-          ref={resultsRef}
-          tabIndex={-1}
-          aria-label="Generated Action Plan Results"
-          className="outline-none"
-        >
-          {plan && !isLoading && <PlanResultsDashboard plan={plan} language={language} />}
-        </div>
-      </main>
+      <MainContent
+        language={language}
+        plan={plan}
+        isLoading={isLoading}
+        error={error}
+        resultsRef={resultsRef}
+        onSubmit={(profile) => void handleProfileSubmit(profile)}
+      />
       <Footer />
     </div>
   );
