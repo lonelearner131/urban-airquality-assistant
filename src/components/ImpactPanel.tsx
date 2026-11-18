@@ -21,7 +21,7 @@ function ExposureMetricCard({
         <span className="text-xs font-semibold uppercase text-emerald-800 dark:text-emerald-300">
           {isHindi ? "एक्सपोजर में कमी" : "Inhaled PM2.5 Dose"}
         </span>
-        <TrendingDown className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+        <TrendingDown className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
       </div>
       <div className="mt-2">
         <span className="text-4xl font-extrabold text-emerald-700 dark:text-emerald-400">
@@ -48,19 +48,19 @@ function CigaretteMetricCard({
         <span className="text-xs font-semibold uppercase text-amber-800 dark:text-amber-300">
           {isHindi ? "सिगरेट तुल्यता (अनुमानित)" : "Cigarette Equiv. (Approx)"}
         </span>
-        <Cigarette className="h-4 w-4 text-amber-600" aria-hidden="true" />
+        <Cigarette className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
       </div>
       <div className="mt-2">
         <div className="flex items-baseline gap-2">
           <span className="text-3xl font-extrabold text-amber-700 dark:text-amber-400">
             {exposure.withPlanCigarettesDay}
           </span>
-          <span className="text-xs text-amber-800 line-through">
+          <span className="text-xs text-amber-800 line-through dark:text-amber-300">
             was {exposure.baselineCigarettesDay}
           </span>
-          <span className="text-xs text-amber-800">cigs/day</span>
+          <span className="text-xs text-amber-800 dark:text-amber-300">cigs/day</span>
         </div>
-        <p className="mt-1 text-[11px] text-amber-800/80">
+        <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
           Approx. heuristic: 22 µg/m³ PM2.5 ≈ 1 cigarette
         </p>
       </div>
@@ -81,11 +81,13 @@ function Co2MetricCard({
         <span className="text-xs font-semibold uppercase text-sky-800 dark:text-sky-300">
           {isHindi ? "CO2 उत्सर्जन बचत" : "Daily CO2 Avoided"}
         </span>
-        <Flame className="h-4 w-4 text-sky-600" aria-hidden="true" />
+        <Flame className="h-4 w-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
       </div>
       <div className="mt-2">
         <span className="text-4xl font-extrabold text-sky-700 dark:text-sky-400">{co2SavedKg}</span>
-        <span className="ml-1 text-sm font-semibold text-sky-800">kg CO2/day</span>
+        <span className="ml-1 text-sm font-semibold text-sky-800 dark:text-sky-300">
+          kg CO2/day
+        </span>
         <p className="mt-1 text-xs text-sky-800 dark:text-sky-300">
           From transit & induction choices
         </p>
@@ -116,7 +118,7 @@ export function ImpactPanel({
               ? "प्रत्यक्ष, प्रमाणित प्रभाव (Quantified Impact)"
               : "Direct Quantified Health & Environmental Impact"}
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Mathematical dose modeling based on WHO guidelines and Berkeley Earth heuristics
           </p>
         </div>
