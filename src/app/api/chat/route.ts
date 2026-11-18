@@ -4,15 +4,36 @@ import { chatRateLimiter } from "@/lib/rateLimit";
 import { ChatRequestSchema } from "@/schemas/chat";
 import { answerAirQualityChat } from "@/services/gemini";
 
+const MAX_BODY_BYTES = 16_384;
+
+function extractClientIp(request: NextRequest): string {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (!forwardedFor) return "127.0.0.1";
+  const firstIp = forwardedFor.split(",")[0]?.trim();
+  return firstIp && firstIp.length > 0 ? firstIp : "127.0.0.1";
+}
+
+async function parseJsonSafely(request: NextRequest): Promise<unknown> {
+  const rawText = await request.text().catch(() => "");
+  if (!rawText || rawText.length > MAX_BODY_BYTES) {
+    return null;
+  }
+  try {
+    return JSON.parse(rawText) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+    const ip = extractClientIp(request);
     const limit = chatRateLimiter.consume(ip);
     if (!limit.allowed) {
       throw new RateLimitError(`Rate limit exceeded. Please wait ${limit.resetSeconds}s`);
     }
 
-    const body: unknown = await request.json().catch(() => null);
+    const body = await parseJsonSafely(request);
     const parsed = ChatRequestSchema.safeParse(body);
     if (!parsed.success) {
       throw new ValidationError("Invalid chat request payload or message length exceeded");
@@ -30,6 +51,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ reply });
   } catch (err: unknown) {
     const appError = normalizeError(err);
-    return NextResponse.json(appError.toResponse(), { status: appError.httpStatus });
+    const headers: HeadersInit =
+      appError.httpStatus === 429 ? { "Retry-After": "60" } : {};
+    return NextResponse.json(appError.toResponse(), {
+      status: appError.httpStatus,
+      headers,
+    });
   }
 }
