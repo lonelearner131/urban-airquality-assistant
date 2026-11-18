@@ -14,7 +14,7 @@ function LanguageSwitcher({
   readonly onLanguageChange: (lang: "en" | "hi") => void;
 }): React.JSX.Element {
   return (
-    <div className="flex items-center gap-2" role="region" aria-label="Language selection">
+    <div className="flex items-center gap-2" role="group" aria-label="Language selection">
       <span className="mr-1 hidden text-xs font-medium text-slate-500 sm:inline dark:text-slate-400">
         Language:
       </span>
@@ -22,6 +22,7 @@ function LanguageSwitcher({
         type="button"
         onClick={() => onLanguageChange("en")}
         aria-pressed={language === "en"}
+        aria-label="English"
         className={`min-h-[44px] min-w-[44px] rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
           language === "en"
             ? "border-sky-600 bg-sky-600 text-white"
@@ -32,8 +33,10 @@ function LanguageSwitcher({
       </button>
       <button
         type="button"
+        lang="hi"
         onClick={() => onLanguageChange("hi")}
         aria-pressed={language === "hi"}
+        aria-label="Hindi (हिन्दी)"
         className={`min-h-[44px] min-w-[44px] rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
           language === "hi"
             ? "border-sky-600 bg-sky-600 text-white"
