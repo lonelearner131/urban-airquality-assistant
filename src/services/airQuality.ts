@@ -3,27 +3,33 @@
  * Features 10-minute in-memory caching, parallelized queries, and fallback zero-filling for null values.
  */
 
+import { NETWORK_CONFIG } from "@/domain/constants";
 import { airQualityCache } from "@/lib/cache";
+import { ValidationError } from "@/lib/errors";
 import { type FetchFn, resilientFetchJson } from "@/lib/http";
-import { OpenMeteoAirQualityResponseSchema } from "@/schemas/airQuality";
+import {
+  type OpenMeteoAirQualityResponse,
+  OpenMeteoAirQualityResponseSchema,
+} from "@/schemas/airQuality";
 import type { AirQualitySnapshot, IAirQualityService } from "./types";
 
+const OPEN_METEO_AQ_ENDPOINT = "https://air-quality-api.open-meteo.com/v1/air-quality";
+
 /**
- * Builds the Open-Meteo air quality endpoint URL.
+ * Builds the Open-Meteo air quality endpoint URL using URLSearchParams.
  */
 function buildApiUrl(lat: number, lon: number): string {
-  const roundedLat = lat.toFixed(2);
-  const roundedLon = lon.toFixed(2);
-  const params = [
-    `latitude=${roundedLat}`,
-    `longitude=${roundedLon}`,
-    "current=pm2_5,pm10,nitrogen_dioxide,ozone,us_aqi",
-    "hourly=pm2_5,pm10,nitrogen_dioxide,ozone,us_aqi",
-    "timezone=auto",
-    "forecast_days=2",
-  ].join("&");
-
-  return `https://air-quality-api.open-meteo.com/v1/air-quality?${params}`;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    throw new ValidationError("Invalid coordinates provided");
+  }
+  const url = new URL(OPEN_METEO_AQ_ENDPOINT);
+  url.searchParams.set("latitude", lat.toFixed(NETWORK_CONFIG.COORDINATE_DECIMAL_PLACES));
+  url.searchParams.set("longitude", lon.toFixed(NETWORK_CONFIG.COORDINATE_DECIMAL_PLACES));
+  url.searchParams.set("current", "pm2_5,pm10,nitrogen_dioxide,ozone,us_aqi");
+  url.searchParams.set("hourly", "pm2_5,pm10,nitrogen_dioxide,ozone,us_aqi");
+  url.searchParams.set("timezone", "auto");
+  url.searchParams.set("forecast_days", "2");
+  return url.toString();
 }
 
 /**
@@ -32,7 +38,7 @@ function buildApiUrl(lat: number, lon: number): string {
 function cleanSeries(series: readonly (number | null)[]): number[] {
   let lastKnown = 25;
   return series.map((val) => {
-    if (val !== null && !isNaN(val)) {
+    if (val !== null && Number.isFinite(val)) {
       lastKnown = val;
       return val;
     }
@@ -45,17 +51,17 @@ function extractMetric(
   fallbackVal: number | undefined,
   def: number,
 ): number {
-  if (typeof val === "number") return val;
-  if (typeof fallbackVal === "number") return fallbackVal;
+  if (typeof val === "number" && Number.isFinite(val)) return val;
+  if (typeof fallbackVal === "number" && Number.isFinite(fallbackVal)) return fallbackVal;
   return def;
 }
 
 function extractGas(val: number | null | undefined): number | undefined {
-  return typeof val === "number" ? val : undefined;
+  return typeof val === "number" && Number.isFinite(val) ? val : undefined;
 }
 
 function buildSnapshot(
-  parsed: import("@/schemas/airQuality").OpenMeteoAirQualityResponse,
+  parsed: OpenMeteoAirQualityResponse,
   hourlyPm25: readonly number[],
   hourlyPm10: readonly number[],
   hourlyUsAqi: readonly number[],
@@ -95,7 +101,7 @@ export class AirQualityService implements IAirQualityService {
     const url = buildApiUrl(lat, lon);
     const rawData = await resilientFetchJson<unknown>(
       url,
-      { timeoutMs: 8000, retries: 1 },
+      { timeoutMs: NETWORK_CONFIG.HTTP_TIMEOUT_MS, retries: NETWORK_CONFIG.MAX_RETRIES },
       this.fetchFn,
     );
     const parsed = OpenMeteoAirQualityResponseSchema.parse(rawData);
