@@ -17,7 +17,7 @@ interface ProfileFormState {
   readonly location: LocationSelection;
   readonly commuteMode: ProfileInput["commuteMode"];
   readonly cookingFuel: ProfileInput["cookingFuel"];
-  readonly heatingMethod: ProfileInput["heatingMethod"];
+  readonly heatingMethod: NonNullable<ProfileInput["heatingMethod"]>;
   readonly ownsPurifier: ProfileInput["ownsPurifier"];
   readonly ventilation: ProfileInput["ventilationHabit"];
   readonly budget: ProfileInput["budgetLevel"];
@@ -153,7 +153,7 @@ function RoutineFieldset({
   );
 }
 
-const COMMUTE_OPTIONS = [
+const COMMUTE_OPTIONS: { value: ProfileInput["commuteMode"]; label: string }[] = [
   { value: "two-wheeler", label: "Motorcycle / Scooter" },
   { value: "walk", label: "Walking" },
   { value: "cycle", label: "Bicycle" },
@@ -164,34 +164,38 @@ const COMMUTE_OPTIONS = [
   { value: "wfh", label: "Work From Home (WFH)" },
 ];
 
-const COOKING_OPTIONS = [
+const COOKING_OPTIONS: { value: ProfileInput["cookingFuel"]; label: string }[] = [
   { value: "lpg", label: "LPG Gas Cylinder" },
   { value: "induction", label: "Electric Induction" },
   { value: "piped_gas", label: "Piped Natural Gas (PNG)" },
   { value: "biomass", label: "Biomass / Wood / Coal" },
+  { value: "electric", label: "Electric Coil / Hotplate" },
 ];
 
-const HEATING_OPTIONS: { value: ProfileInput["heatingMethod"]; label: string }[] = [
+const HEATING_OPTIONS: {
+  value: NonNullable<ProfileInput["heatingMethod"]>;
+  label: string;
+}[] = [
   { value: "none", label: "No space heating" },
   { value: "electric_heater", label: "Electric blower / Oil heater" },
-  { value: "biomass_fire", label: "Biomass / Wood / Angithi / Coal" },
+  { value: "biomass_fire", label: "Wood / Fireplace / Angithi / Coal" },
   { value: "heat_pump", label: "Heat Pump / AC Heater" },
   { value: "central", label: "Central Heating" },
 ];
 
-const PURIFIER_OPTIONS = [
+const PURIFIER_OPTIONS: { value: ProfileInput["ownsPurifier"]; label: string }[] = [
   { value: "none", label: "None currently owned" },
   { value: "hepa", label: "Commercial HEPA Purifier" },
   { value: "diy", label: "DIY Box Fan / Filter" },
 ];
 
-const VENTILATION_OPTIONS = [
+const VENTILATION_OPTIONS: { value: ProfileInput["ventilationHabit"]; label: string }[] = [
   { value: "closed", label: "Windows closed all day" },
-  { value: "open_clean_window", label: "Open only during clean hours" },
-  { value: "always_open", label: "Windows kept open" },
+  { value: "mixed", label: "Open only during clean hours" },
+  { value: "open", label: "Windows kept open" },
 ];
 
-const BUDGET_OPTIONS = [
+const BUDGET_OPTIONS: { value: ProfileInput["budgetLevel"]; label: string }[] = [
   { value: "free", label: "Zero-Cost Only" },
   { value: "low", label: "Low Budget (< ₹2,500 / $30)" },
   { value: "flexible", label: "Flexible Budget" },
