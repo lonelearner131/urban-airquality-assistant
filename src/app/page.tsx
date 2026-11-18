@@ -38,7 +38,7 @@ function HeroBanner({ language }: { readonly language: "en" | "hi" }): React.JSX
 
 function PlanLoadingSkeleton(): React.JSX.Element {
   return (
-    <div aria-live="polite" aria-busy="true" className="mt-6 flex flex-col gap-6">
+    <div role="status" aria-live="polite" aria-busy="true" className="mt-6 flex flex-col gap-6">
       <span className="sr-only">Generating personalized air quality plan...</span>
       <Skeleton className="h-44 w-full" />
       <Skeleton className="h-60 w-full" />
@@ -123,6 +123,7 @@ export default function Home(): React.JSX.Element {
     await fetchPlan({ ...profile, preferredLanguage: language });
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth" });
+      resultsRef.current?.focus();
     }, 150);
   };
 
@@ -135,7 +136,11 @@ export default function Home(): React.JSX.Element {
       >
         <HeroBanner language={language} />
         <Disclaimer language={language} />
-        <ProfileForm onSubmit={handleProfileSubmit} isLoading={isLoading} language={language} />
+        <ProfileForm
+          onSubmit={(profile) => void handleProfileSubmit(profile)}
+          isLoading={isLoading}
+          language={language}
+        />
 
         {error && (
           <Alert variant="danger" title="Unable to Generate Plan" className="mt-4">
@@ -145,7 +150,12 @@ export default function Home(): React.JSX.Element {
 
         {isLoading && <PlanLoadingSkeleton />}
 
-        <div ref={resultsRef} tabIndex={-1} className="outline-none">
+        <div
+          ref={resultsRef}
+          tabIndex={-1}
+          aria-label="Generated Action Plan Results"
+          className="outline-none"
+        >
           {plan && !isLoading && <PlanResultsDashboard plan={plan} language={language} />}
         </div>
       </main>
