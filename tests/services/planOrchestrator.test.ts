@@ -7,8 +7,11 @@ describe("PlanOrchestrator", () => {
   const fakeSnapshot = {
     latitude: 28.61,
     longitude: 77.21,
+    timezone: "UTC",
     currentPm25: 160,
     currentPm10: 240,
+    currentNo2: 30,
+    currentO3: 40,
     currentUsAqi: 210,
     hourlyTimes: [
       "2026-11-18T00:00:00Z",
