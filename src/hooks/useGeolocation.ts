@@ -6,13 +6,20 @@ export interface GeolocationCoords {
   readonly longitude: number;
 }
 
-export function useGeolocation() {
+export interface UseGeolocationResult {
+  readonly coords: GeolocationCoords | null;
+  readonly error: string | null;
+  readonly loading: boolean;
+  readonly requestPosition: (onSuccess?: (coords: GeolocationCoords) => void) => void;
+}
+
+export function useGeolocation(): UseGeolocationResult {
   const [coords, setCoords] = useState<GeolocationCoords | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const requestPosition = (): void => {
-    if (!navigator.geolocation) {
+  const requestPosition = (onSuccess?: (resolved: GeolocationCoords) => void): void => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
       return;
     }
@@ -22,17 +29,19 @@ export function useGeolocation() {
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCoords({
+        const resolved: GeolocationCoords = {
           latitude: roundCoordinate(pos.coords.latitude),
           longitude: roundCoordinate(pos.coords.longitude),
-        });
+        };
+        setCoords(resolved);
         setLoading(false);
+        onSuccess?.(resolved);
       },
       () => {
-        setError("Unable to obtain location coordinates");
+        setError("Unable to retrieve location. Please search by city name.");
         setLoading(false);
       },
-      { timeout: 8000 },
+      { enableHighAccuracy: false, timeout: 8000 },
     );
   };
 
