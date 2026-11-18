@@ -3,16 +3,28 @@
  * Strips ASCII control characters, HTML/script tags, and delimiter manipulation tokens.
  */
 
-// eslint-disable-next-line no-control-regex
-const CONTROL_CHARS_REGEX = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g;
 const HTML_TAGS_REGEX = /<[^>]*>/g;
 const PROMPT_DELIMITER_REGEX = /["'`\\]/g;
 
+function isAllowedCodePoint(code: number): boolean {
+  if (code === 0x09 || code === 0x0a || code === 0x0d) return true;
+  if (code >= 0x00 && code <= 0x1f) return false;
+  if (code >= 0x7f && code <= 0x9f) return false;
+  return true;
+}
+
 /**
- * Strips non-printable ASCII and Unicode control characters.
+ * Strips non-printable ASCII and Unicode control characters without regex lint suppressions.
  */
 export function stripControlCharacters(input: string): string {
-  return input.replace(CONTROL_CHARS_REGEX, "");
+  let result = "";
+  for (const char of input) {
+    const code = char.codePointAt(0);
+    if (code !== undefined && isAllowedCodePoint(code)) {
+      result += char;
+    }
+  }
+  return result;
 }
 
 /**
