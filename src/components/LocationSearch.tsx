@@ -17,13 +17,25 @@ export interface LocationSearchProps {
   readonly initialLocationName?: string;
 }
 
+export function toLocationSelection(item: GeocodeResultItem): LocationSelection {
+  const name = [item.name, item.admin1, item.country].filter(Boolean).join(", ");
+  return {
+    name,
+    countryCode: item.country_code,
+    lat: roundCoordinate(item.latitude),
+    lon: roundCoordinate(item.longitude),
+  };
+}
+
 function LocationDropdown({
   isOpen,
   suggestions,
+  activeIndex,
   onSelect,
 }: {
   readonly isOpen: boolean;
   readonly suggestions: readonly GeocodeResultItem[];
+  readonly activeIndex: number;
   readonly onSelect: (item: GeocodeResultItem) => void;
 }): React.JSX.Element | null {
   if (!isOpen || suggestions.length === 0) return null;
@@ -32,25 +44,46 @@ function LocationDropdown({
     <ul
       id="location-suggestions-list"
       role="listbox"
+      aria-label="Location suggestions"
       className="absolute left-0 right-0 top-[76px] z-30 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900"
     >
-      {suggestions.map((item) => (
-        <li key={item.id} role="option" aria-selected="false">
-          <button
-            type="button"
+      {suggestions.map((item, index) => {
+        const isSelected = index === activeIndex;
+        const label = [item.name, item.admin1, item.country].filter(Boolean).join(", ");
+        return (
+          <li
+            key={item.id}
+            id={`location-option-${item.id}`}
+            role="option"
+            aria-selected={isSelected}
             onClick={() => onSelect(item)}
-            className="flex min-h-[44px] w-full items-center gap-2 border-b border-slate-100 px-4 py-3 text-left text-sm text-slate-800 last:border-b-0 hover:bg-sky-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-sky-950/40"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onSelect(item);
+              }
+            }}
+            tabIndex={-1}
+            className={`flex min-h-[44px] w-full cursor-pointer items-center gap-2 border-b border-slate-100 px-4 py-3 text-left text-sm text-slate-800 last:border-b-0 hover:bg-sky-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-sky-950/40 ${
+              isSelected ? "bg-sky-50 dark:bg-sky-950/40" : ""
+            }`}
           >
             <MapPin className="h-4 w-4 shrink-0 text-sky-600" aria-hidden="true" />
-            <span>{[item.name, item.admin1, item.country].filter(Boolean).join(", ")}</span>
-          </button>
-        </li>
-      ))}
+            <span>{label}</span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
-function useGeocodeSuggestions(query: string) {
+interface UseGeocodeSuggestionsResult {
+  readonly suggestions: readonly GeocodeResultItem[];
+  readonly isOpen: boolean;
+  readonly setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+function useGeocodeSuggestions(query: string): UseGeocodeSuggestionsResult {
   const [suggestions, setSuggestions] = useState<readonly GeocodeResultItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -70,12 +103,14 @@ function useGeocodeSuggestions(query: string) {
           signal: controller.signal,
         });
         if (res.ok) {
-          const json = await res.json();
+          const json = (await res.json()) as { results?: readonly GeocodeResultItem[] };
           setSuggestions(json.results ?? []);
           setIsOpen(true);
         }
-      } catch {
-        // Ignored
+      } catch (err) {
+        if (err instanceof Error && err.name !== "AbortError") {
+          setIsOpen(false);
+        }
       }
     }, 300);
     return () => {
@@ -87,10 +122,15 @@ function useGeocodeSuggestions(query: string) {
   return { suggestions, isOpen, setIsOpen };
 }
 
+interface UseCurrentLocationResult {
+  readonly geoError: string | null;
+  readonly requestLocation: () => void;
+}
+
 function useCurrentLocation(
   onSelect: (loc: { name: string; lat: number; lon: number }) => void,
   onNameUpdate: (name: string) => void,
-) {
+): UseCurrentLocationResult {
   const [geoError, setGeoError] = useState<string | null>(null);
 
   const requestLocation = (): void => {
@@ -119,7 +159,9 @@ interface InputBarProps {
   readonly query: string;
   readonly isOpen: boolean;
   readonly hasSuggestions: boolean;
+  readonly activeOptionId?: string | undefined;
   readonly onQueryChange: (val: string) => void;
+  readonly onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   readonly onFocus: () => void;
   readonly onGeoClick: () => void;
 }
@@ -128,7 +170,9 @@ function LocationInputBar({
   query,
   isOpen,
   hasSuggestions,
+  activeOptionId,
   onQueryChange,
+  onKeyDown,
   onFocus,
   onGeoClick,
 }: InputBarProps): React.JSX.Element {
@@ -142,11 +186,13 @@ function LocationInputBar({
           role="combobox"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
+          onKeyDown={onKeyDown}
           onFocus={() => hasSuggestions && onFocus()}
           placeholder="e.g. New Delhi, Noida, Lahore, London"
           aria-autocomplete="list"
           aria-expanded={isOpen}
           aria-controls="location-suggestions-list"
+          aria-activedescendant={isOpen ? activeOptionId : undefined}
           className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
       </div>
@@ -162,21 +208,12 @@ function LocationInputBar({
   );
 }
 
-function toLocationSelection(item: GeocodeResultItem): LocationSelection {
-  const name = [item.name, item.admin1, item.country].filter(Boolean).join(", ");
-  return {
-    name,
-    countryCode: item.country_code,
-    lat: roundCoordinate(item.latitude),
-    lon: roundCoordinate(item.longitude),
-  };
-}
-
 export function LocationSearch({
   onSelectLocation,
   initialLocationName = "",
 }: LocationSearchProps): React.JSX.Element {
   const [query, setQuery] = useState(initialLocationName);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const { suggestions, isOpen, setIsOpen } = useGeocodeSuggestions(query);
   const { geoError, requestLocation } = useCurrentLocation(onSelectLocation, setQuery);
 
@@ -184,8 +221,28 @@ export function LocationSearch({
     const loc = toLocationSelection(item);
     setQuery(loc.name);
     setIsOpen(false);
+    setActiveIndex(-1);
     onSelectLocation(loc);
   };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (!isOpen || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
+    } else if (e.key === "Enter" && activeIndex >= 0 && suggestions[activeIndex]) {
+      e.preventDefault();
+      handleSelect(suggestions[activeIndex]);
+    } else if (e.key === "Escape") {
+      setIsOpen(false);
+      setActiveIndex(-1);
+    }
+  };
+
+  const activeItem = activeIndex >= 0 ? suggestions[activeIndex] : undefined;
 
   return (
     <div className="relative flex w-full flex-col gap-1.5">
@@ -199,7 +256,12 @@ export function LocationSearch({
         query={query}
         isOpen={isOpen}
         hasSuggestions={suggestions.length > 0}
-        onQueryChange={setQuery}
+        activeOptionId={activeItem ? `location-option-${activeItem.id}` : undefined}
+        onQueryChange={(val) => {
+          setQuery(val);
+          setActiveIndex(-1);
+        }}
+        onKeyDown={handleKeyDown}
         onFocus={() => setIsOpen(true)}
         onGeoClick={requestLocation}
       />
@@ -208,7 +270,12 @@ export function LocationSearch({
           {geoError}
         </span>
       )}
-      <LocationDropdown isOpen={isOpen} suggestions={suggestions} onSelect={handleSelect} />
+      <LocationDropdown
+        isOpen={isOpen}
+        suggestions={suggestions}
+        activeIndex={activeIndex}
+        onSelect={handleSelect}
+      />
     </div>
   );
 }
