@@ -16,6 +16,14 @@ describe("http resilientFetchJson", () => {
     expect(data.aqi).toBe(180);
   });
 
+  it("throws UpstreamServiceError on non-HTTPS URL requests (SSRF defense)", async () => {
+    const fakeFetch: typeof fetch = async () => new Response("OK", { status: 200 });
+
+    await expect(
+      resilientFetchJson("http://insecure-api.example.com", {}, fakeFetch),
+    ).rejects.toBeInstanceOf(UpstreamServiceError);
+  });
+
   it("retries and succeeds on subsequent attempt", async () => {
     let callCount = 0;
     const fakeFetch: typeof fetch = async () => {
