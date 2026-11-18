@@ -202,51 +202,6 @@ function handleComboboxKey(
   }
 }
 
-interface LocationSearchContentProps {
-  readonly query: string;
-  readonly isOpen: boolean;
-  readonly suggestions: readonly GeocodeResultItem[];
-  readonly activeIndex: number;
-  readonly activeOptionId?: string;
-  readonly geoError: string | null;
-  readonly onQueryChange: (val: string) => void;
-  readonly onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  readonly onFocus: () => void;
-  readonly onGeoClick: () => void;
-  readonly onSelect: (item: GeocodeResultItem) => void;
-}
-
-function LocationSearchContent(props: LocationSearchContentProps): React.JSX.Element {
-  return (
-    <div className="relative flex w-full flex-col gap-1.5">
-      <label htmlFor="location-search-input" className="text-sm font-medium text-slate-800 dark:text-slate-200">
-        City or Neighborhood Location
-      </label>
-      <LocationInputBar
-        query={props.query}
-        isOpen={props.isOpen}
-        hasSuggestions={props.suggestions.length > 0}
-        activeOptionId={props.activeOptionId}
-        onQueryChange={props.onQueryChange}
-        onKeyDown={props.onKeyDown}
-        onFocus={props.onFocus}
-        onGeoClick={props.onGeoClick}
-      />
-      {props.geoError && (
-        <span role="alert" className="text-xs text-rose-600 dark:text-rose-400">
-          {props.geoError}
-        </span>
-      )}
-      <LocationDropdown
-        isOpen={props.isOpen}
-        suggestions={props.suggestions}
-        activeIndex={props.activeIndex}
-        onSelect={props.onSelect}
-      />
-    </div>
-  );
-}
-
 export function LocationSearch({
   onSelectLocation,
   initialLocationName = "",
@@ -264,35 +219,32 @@ export function LocationSearch({
     onSelectLocation(loc);
   };
 
-  const handleGeoClick = (): void => {
+  const handleGeoClick = (): void =>
     requestPosition(({ latitude, longitude }) => {
-      const locName = `Location (${latitude}, ${longitude})`;
-      setQuery(locName);
+      const name = `Location (${latitude}, ${longitude})`;
+      setQuery(name);
       setIsOpen(false);
-      onSelectLocation({ name: locName, lat: latitude, lon: longitude });
+      onSelectLocation({ name, lat: latitude, lon: longitude });
     });
-  };
 
   const activeItem = activeIndex >= 0 ? suggestions[activeIndex] : undefined;
-
   return (
-    <LocationSearchContent
-      query={query}
-      isOpen={isOpen}
-      suggestions={suggestions}
-      activeIndex={activeIndex}
-      activeOptionId={activeItem ? `location-option-${activeItem.id}` : undefined}
-      geoError={geoError}
-      onQueryChange={(val) => {
-        setQuery(val);
-        setActiveIndex(-1);
-      }}
-      onKeyDown={(e) =>
-        handleComboboxKey(e, isOpen, suggestions, activeIndex, setActiveIndex, setIsOpen, handleSelect)
-      }
-      onFocus={() => setIsOpen(true)}
-      onGeoClick={handleGeoClick}
-      onSelect={handleSelect}
-    />
+    <div className="relative flex w-full flex-col gap-1.5">
+      <label htmlFor="location-search-input" className="text-sm font-medium text-slate-800 dark:text-slate-200">
+        City or Neighborhood Location
+      </label>
+      <LocationInputBar
+        query={query}
+        isOpen={isOpen}
+        hasSuggestions={suggestions.length > 0}
+        activeOptionId={activeItem ? `location-option-${activeItem.id}` : undefined}
+        onQueryChange={(val) => { setQuery(val); setActiveIndex(-1); }}
+        onKeyDown={(e) => handleComboboxKey(e, isOpen, suggestions, activeIndex, setActiveIndex, setIsOpen, handleSelect)}
+        onFocus={() => setIsOpen(true)}
+        onGeoClick={handleGeoClick}
+      />
+      {geoError && <span role="alert" className="text-xs text-rose-600 dark:text-rose-400">{geoError}</span>}
+      <LocationDropdown isOpen={isOpen} suggestions={suggestions} activeIndex={activeIndex} onSelect={handleSelect} />
+    </div>
   );
 }
