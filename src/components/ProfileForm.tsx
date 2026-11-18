@@ -171,11 +171,12 @@ const COOKING_OPTIONS = [
   { value: "biomass", label: "Biomass / Wood / Coal" },
 ];
 
-const HEATING_OPTIONS = [
+const HEATING_OPTIONS: { value: ProfileInput["heatingMethod"]; label: string }[] = [
   { value: "none", label: "No space heating" },
-  { value: "electric", label: "Electric blower / Oil heater" },
-  { value: "wood_fire", label: "Wood / Fireplace" },
-  { value: "angithi_coal", label: "Angithi / Coal burner" },
+  { value: "electric_heater", label: "Electric blower / Oil heater" },
+  { value: "biomass_fire", label: "Biomass / Wood / Angithi / Coal" },
+  { value: "heat_pump", label: "Heat Pump / AC Heater" },
+  { value: "central", label: "Central Heating" },
 ];
 
 const PURIFIER_OPTIONS = [
