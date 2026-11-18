@@ -231,19 +231,21 @@ interface LayoutProps {
   readonly isOpen: boolean;
   readonly suggestions: readonly GeocodeResultItem[];
   readonly activeIndex: number;
-  readonly activeOptionId?: string;
+  readonly activeOptionId?: string | undefined;
   readonly geoError: string | null;
   readonly setQuery: (q: string) => void;
   readonly setActiveIndex: React.Dispatch<React.SetStateAction<number>>;
   readonly setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   readonly h: ReturnType<typeof useSearchHandlers>;
-  readonly requestPosition: ReturnType<typeof useGeolocation>["requestPosition"];
 }
 
 function LocationSearchLayout(p: LayoutProps): React.JSX.Element {
   return (
     <div className="relative flex w-full flex-col gap-1.5">
-      <label htmlFor="location-search-input" className="text-sm font-medium text-slate-800 dark:text-slate-200">
+      <label
+        htmlFor="location-search-input"
+        className="text-sm font-medium text-slate-800 dark:text-slate-200"
+      >
         City or Neighborhood Location
       </label>
       <LocationInputBar
@@ -251,13 +253,35 @@ function LocationSearchLayout(p: LayoutProps): React.JSX.Element {
         isOpen={p.isOpen}
         hasSuggestions={p.suggestions.length > 0}
         activeOptionId={p.activeOptionId}
-        onQueryChange={(val) => { p.setQuery(val); p.setActiveIndex(-1); }}
-        onKeyDown={(e) => handleComboboxKey(e, p.isOpen, p.suggestions, p.activeIndex, p.setActiveIndex, p.setIsOpen, p.h.handleSelect)}
+        onQueryChange={(val) => {
+          p.setQuery(val);
+          p.setActiveIndex(-1);
+        }}
+        onKeyDown={(e) =>
+          handleComboboxKey(
+            e,
+            p.isOpen,
+            p.suggestions,
+            p.activeIndex,
+            p.setActiveIndex,
+            p.setIsOpen,
+            p.h.handleSelect,
+          )
+        }
         onFocus={() => p.setIsOpen(true)}
         onGeoClick={p.h.handleGeoClick}
       />
-      {p.geoError && <span role="alert" className="text-xs text-rose-600 dark:text-rose-400">{p.geoError}</span>}
-      <LocationDropdown isOpen={p.isOpen} suggestions={p.suggestions} activeIndex={p.activeIndex} onSelect={p.h.handleSelect} />
+      {p.geoError && (
+        <span role="alert" className="text-xs text-rose-600 dark:text-rose-400">
+          {p.geoError}
+        </span>
+      )}
+      <LocationDropdown
+        isOpen={p.isOpen}
+        suggestions={p.suggestions}
+        activeIndex={p.activeIndex}
+        onSelect={p.h.handleSelect}
+      />
     </div>
   );
 }
@@ -285,7 +309,6 @@ export function LocationSearch({
       setActiveIndex={setActiveIndex}
       setIsOpen={setIsOpen}
       h={h}
-      requestPosition={requestPosition}
     />
   );
 }
