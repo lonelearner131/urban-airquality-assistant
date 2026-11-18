@@ -63,26 +63,10 @@ function VulnerabilitiesFieldset({
         {isHindi ? "संवेदनशील सदस्य (Vulnerable Members)" : "Vulnerable Household Members"}
       </legend>
       <div className="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <CheckboxCard
-          label="Children (< 14 yrs)"
-          checked={state.hasChildren}
-          onChange={(v) => update("hasChildren", v)}
-        />
-        <CheckboxCard
-          label="Elderly (> 65 yrs)"
-          checked={state.hasElderly}
-          onChange={(v) => update("hasElderly", v)}
-        />
-        <CheckboxCard
-          label="Expectant Mother"
-          checked={state.hasPregnancy}
-          onChange={(v) => update("hasPregnancy", v)}
-        />
-        <CheckboxCard
-          label="Asthma / COPD History"
-          checked={state.hasRespiratory}
-          onChange={(v) => update("hasRespiratory", v)}
-        />
+        <CheckboxCard label="Children (< 14 yrs)" checked={state.hasChildren} onChange={(v) => update("hasChildren", v)} />
+        <CheckboxCard label="Elderly (> 65 yrs)" checked={state.hasElderly} onChange={(v) => update("hasElderly", v)} />
+        <CheckboxCard label="Expectant Mother" checked={state.hasPregnancy} onChange={(v) => update("hasPregnancy", v)} />
+        <CheckboxCard label="Asthma / COPD History" checked={state.hasRespiratory} onChange={(v) => update("hasRespiratory", v)} />
       </div>
     </fieldset>
   );
@@ -103,27 +87,15 @@ function RoutineFieldset({
         {isHindi ? "दैनिक बाहरी गतिविधियाँ" : "Outdoor Routines & Habits"}
       </legend>
       <div className="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <CheckboxCard
-          label="School Run"
-          checked={state.schoolRun}
-          onChange={(v) => update("schoolRun", v)}
-        />
-        <CheckboxCard
-          label="Morning Walk"
-          checked={state.morningWalk}
-          onChange={(v) => update("morningWalk", v)}
-        />
-        <CheckboxCard
-          label="Outdoor Exercise"
-          checked={state.exercise}
-          onChange={(v) => update("exercise", v)}
-        />
+        <CheckboxCard label="School Run" checked={state.schoolRun} onChange={(v) => update("schoolRun", v)} />
+        <CheckboxCard label="Morning Walk" checked={state.morningWalk} onChange={(v) => update("morningWalk", v)} />
+        <CheckboxCard label="Outdoor Exercise" checked={state.exercise} onChange={(v) => update("exercise", v)} />
       </div>
     </fieldset>
   );
 }
 
-function LifestyleSelectGrid({
+function CommuteAndCookingGrid({
   state,
   update,
 }: {
@@ -131,7 +103,7 @@ function LifestyleSelectGrid({
   readonly update: StateUpdater;
 }): React.JSX.Element {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+    <>
       <Select
         label="Primary Commute Mode"
         value={state.commuteMode}
@@ -147,11 +119,22 @@ function LifestyleSelectGrid({
       <Select
         label="Heating Method"
         value={state.heatingMethod}
-        onChange={(e) =>
-          update("heatingMethod", e.target.value as NonNullable<ProfileInput["heatingMethod"]>)
-        }
+        onChange={(e) => update("heatingMethod", e.target.value as NonNullable<ProfileInput["heatingMethod"]>)}
         options={HEATING_OPTIONS}
       />
+    </>
+  );
+}
+
+function PurifierAndBudgetGrid({
+  state,
+  update,
+}: {
+  readonly state: ProfileFormState;
+  readonly update: StateUpdater;
+}): React.JSX.Element {
+  return (
+    <>
       <Select
         label="Air Purifier Status"
         value={state.ownsPurifier}
@@ -170,7 +153,7 @@ function LifestyleSelectGrid({
         onChange={(e) => update("budget", e.target.value as ProfileInput["budgetLevel"])}
         options={BUDGET_OPTIONS}
       />
-    </div>
+    </>
   );
 }
 
@@ -208,13 +191,13 @@ export function ProfileForm({
       className="flex flex-col gap-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
     >
       <FormHeader isHindi={isHindi} />
-      <LocationSearch
-        initialLocationName={state.location.name}
-        onSelectLocation={(l) => update("location", l)}
-      />
+      <LocationSearch initialLocationName={state.location.name} onSelectLocation={(l) => update("location", l)} />
       <VulnerabilitiesFieldset isHindi={isHindi} state={state} update={update} />
       <RoutineFieldset isHindi={isHindi} state={state} update={update} />
-      <LifestyleSelectGrid state={state} update={update} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+        <CommuteAndCookingGrid state={state} update={update} />
+        <PurifierAndBudgetGrid state={state} update={update} />
+      </div>
       <Button type="submit" variant="primary" size="lg" isLoading={isLoading} className="w-full">
         <Sparkles className="mr-2 h-5 w-5" aria-hidden="true" />
         {isHindi ? "योजना तैयार करें" : "Generate Action Plan"}
