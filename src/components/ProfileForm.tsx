@@ -226,10 +226,7 @@ function CommuteAndCookingGrid({
         label="Heating Method"
         value={state.heatingMethod}
         onChange={(e) =>
-          update(
-            "heatingMethod",
-            e.target.value as NonNullable<ProfileInput["heatingMethod"]>
-          )
+          update("heatingMethod", e.target.value as NonNullable<ProfileInput["heatingMethod"]>)
         }
         options={HEATING_OPTIONS}
       />
