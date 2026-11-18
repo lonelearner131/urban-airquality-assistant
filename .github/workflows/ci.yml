@@ -26,4 +26,4 @@ jobs:
       - name: Run Full Validation Pipeline
         run: npm run validate
         env:
-          GEMINI_API_KEY: test_mock_key
+          GEMINI_API_KEY: ""
