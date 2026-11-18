@@ -7,7 +7,7 @@
 import { EMISSION_SAVINGS_KG_CO2 } from "@/domain/constants";
 import type { RecommendationRule } from "@/domain/types";
 
-export const RULE_CATALOGUE: readonly RecommendationRule[] = [
+const ROUTINE_AND_INDOOR_RULES: readonly RecommendationRule[] = [
   {
     id: "routine_shift_school_run",
     category: "routine",
@@ -105,6 +105,9 @@ export const RULE_CATALOGUE: readonly RecommendationRule[] = [
       "Ferro et al. (2004) Indoor Air: Indoor indoor particle resuspension dynamics from human activity.",
     conditions: { minAqi: 80 },
   },
+];
+
+const SUSTAINABLE_AND_COMMUNITY_RULES: readonly RecommendationRule[] = [
   {
     id: "sustainable_induction_cooking",
     category: "sustainable",
@@ -165,9 +168,14 @@ export const RULE_CATALOGUE: readonly RecommendationRule[] = [
       "स्कूल गेट के बाहर सैकड़ों गाड़ियों के स्टार्ट रहने से तीव्र प्रदूषण होता है। साझा वाहन से इसे आधा किया जा सकता है।",
     effort: "low",
     exposureReductionPct: 25,
-    emissionSavedKgCo2: 1.5,
+    emissionSavedKgCo2: EMISSION_SAVINGS_KG_CO2.SCHOOL_CARPOOL,
     citation:
       "Levy et al. (2001) Environmental Health Perspectives: Vehicle idling around urban school zones.",
     conditions: { minAqi: 120, vulnerabilityRequired: true },
   },
+];
+
+export const RULE_CATALOGUE: readonly RecommendationRule[] = [
+  ...ROUTINE_AND_INDOOR_RULES,
+  ...SUSTAINABLE_AND_COMMUNITY_RULES,
 ];
