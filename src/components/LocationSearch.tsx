@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Locate, MapPin, Search } from "lucide-react";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { roundCoordinate } from "@/schemas/profile";
 import type { GeocodeResultItem } from "@/schemas/airQuality";
 
@@ -122,39 +123,6 @@ function useGeocodeSuggestions(query: string): UseGeocodeSuggestionsResult {
   return { suggestions, isOpen, setIsOpen };
 }
 
-interface UseCurrentLocationResult {
-  readonly geoError: string | null;
-  readonly requestLocation: () => void;
-}
-
-function useCurrentLocation(
-  onSelect: (loc: { name: string; lat: number; lon: number }) => void,
-  onNameUpdate: (name: string) => void,
-): UseCurrentLocationResult {
-  const [geoError, setGeoError] = useState<string | null>(null);
-
-  const requestLocation = (): void => {
-    if (!navigator.geolocation) {
-      setGeoError("Geolocation is not supported by your browser");
-      return;
-    }
-    setGeoError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = roundCoordinate(pos.coords.latitude);
-        const lon = roundCoordinate(pos.coords.longitude);
-        const locName = `Location (${lat}, ${lon})`;
-        onNameUpdate(locName);
-        onSelect({ name: locName, lat, lon });
-      },
-      () => setGeoError("Unable to retrieve location. Please search by city name."),
-      { enableHighAccuracy: false, timeout: 8000 },
-    );
-  };
-
-  return { geoError, requestLocation };
-}
-
 interface InputBarProps {
   readonly query: string;
   readonly isOpen: boolean;
@@ -215,7 +183,7 @@ export function LocationSearch({
   const [query, setQuery] = useState(initialLocationName);
   const [activeIndex, setActiveIndex] = useState(-1);
   const { suggestions, isOpen, setIsOpen } = useGeocodeSuggestions(query);
-  const { geoError, requestLocation } = useCurrentLocation(onSelectLocation, setQuery);
+  const { error: geoError, requestPosition } = useGeolocation();
 
   const handleSelect = (item: GeocodeResultItem): void => {
     const loc = toLocationSelection(item);
@@ -223,6 +191,16 @@ export function LocationSearch({
     setIsOpen(false);
     setActiveIndex(-1);
     onSelectLocation(loc);
+  };
+
+  const handleGeoClick = (): void => {
+    requestPosition(({ latitude, longitude }) => {
+      const locName = `Location (${latitude}, ${longitude})`;
+      setQuery(locName);
+      setIsOpen(false);
+      setActiveIndex(-1);
+      onSelectLocation({ name: locName, lat: latitude, lon: longitude });
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
@@ -263,7 +241,7 @@ export function LocationSearch({
         }}
         onKeyDown={handleKeyDown}
         onFocus={() => setIsOpen(true)}
-        onGeoClick={requestLocation}
+        onGeoClick={handleGeoClick}
       />
       {geoError && (
         <span role="alert" className="text-xs text-rose-600 dark:text-rose-400">
