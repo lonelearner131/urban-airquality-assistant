@@ -28,6 +28,38 @@ export function toLocationSelection(item: GeocodeResultItem): LocationSelection 
   };
 }
 
+function SuggestionOption({
+  item,
+  isSelected,
+  onSelect,
+}: {
+  readonly item: GeocodeResultItem;
+  readonly isSelected: boolean;
+  readonly onSelect: (item: GeocodeResultItem) => void;
+}): React.JSX.Element {
+  const label = [item.name, item.admin1, item.country].filter(Boolean).join(", ");
+  const activeClass = isSelected ? "bg-sky-50 dark:bg-sky-950/40" : "";
+  return (
+    <li
+      id={`location-option-${item.id}`}
+      role="option"
+      aria-selected={isSelected}
+      onClick={() => onSelect(item)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect(item);
+        }
+      }}
+      tabIndex={-1}
+      className={`flex min-h-[44px] w-full cursor-pointer items-center gap-2 border-b border-slate-100 px-4 py-3 text-left text-sm text-slate-800 last:border-b-0 hover:bg-sky-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-sky-950/40 ${activeClass}`}
+    >
+      <MapPin className="h-4 w-4 shrink-0 text-sky-600" aria-hidden="true" />
+      <span>{label}</span>
+    </li>
+  );
+}
+
 function LocationDropdown({
   isOpen,
   suggestions,
@@ -48,32 +80,14 @@ function LocationDropdown({
       aria-label="Location suggestions"
       className="absolute left-0 right-0 top-[76px] z-30 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900"
     >
-      {suggestions.map((item, index) => {
-        const isSelected = index === activeIndex;
-        const label = [item.name, item.admin1, item.country].filter(Boolean).join(", ");
-        return (
-          <li
-            key={item.id}
-            id={`location-option-${item.id}`}
-            role="option"
-            aria-selected={isSelected}
-            onClick={() => onSelect(item)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onSelect(item);
-              }
-            }}
-            tabIndex={-1}
-            className={`flex min-h-[44px] w-full cursor-pointer items-center gap-2 border-b border-slate-100 px-4 py-3 text-left text-sm text-slate-800 last:border-b-0 hover:bg-sky-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-sky-950/40 ${
-              isSelected ? "bg-sky-50 dark:bg-sky-950/40" : ""
-            }`}
-          >
-            <MapPin className="h-4 w-4 shrink-0 text-sky-600" aria-hidden="true" />
-            <span>{label}</span>
-          </li>
-        );
-      })}
+      {suggestions.map((item, idx) => (
+        <SuggestionOption
+          key={item.id}
+          item={item}
+          isSelected={idx === activeIndex}
+          onSelect={onSelect}
+        />
+      ))}
     </ul>
   );
 }
@@ -108,10 +122,8 @@ function useGeocodeSuggestions(query: string): UseGeocodeSuggestionsResult {
           setSuggestions(json.results ?? []);
           setIsOpen(true);
         }
-      } catch (err) {
-        if (err instanceof Error && err.name !== "AbortError") {
-          setIsOpen(false);
-        }
+      } catch {
+        setIsOpen(false);
       }
     }, 300);
     return () => {
@@ -176,6 +188,12 @@ function LocationInputBar({
   );
 }
 
+function computeNextIndex(key: string, current: number, total: number): number | null {
+  if (key === "ArrowDown") return (current + 1) % total;
+  if (key === "ArrowUp") return current <= 0 ? total - 1 : current - 1;
+  return null;
+}
+
 export function LocationSearch({
   onSelectLocation,
   initialLocationName = "",
@@ -198,25 +216,21 @@ export function LocationSearch({
       const locName = `Location (${latitude}, ${longitude})`;
       setQuery(locName);
       setIsOpen(false);
-      setActiveIndex(-1);
       onSelectLocation({ name: locName, lat: latitude, lon: longitude });
     });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (!isOpen || suggestions.length === 0) return;
-    if (e.key === "ArrowDown") {
+    const nextIdx = computeNextIndex(e.key, activeIndex, suggestions.length);
+    if (nextIdx !== null) {
       e.preventDefault();
-      setActiveIndex((prev) => (prev + 1) % suggestions.length);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
-    } else if (e.key === "Enter" && activeIndex >= 0 && suggestions[activeIndex]) {
+      setActiveIndex(nextIdx);
+    } else if (e.key === "Enter" && suggestions[activeIndex]) {
       e.preventDefault();
       handleSelect(suggestions[activeIndex]);
     } else if (e.key === "Escape") {
       setIsOpen(false);
-      setActiveIndex(-1);
     }
   };
 
