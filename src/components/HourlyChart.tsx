@@ -9,10 +9,7 @@ export interface HourlyChartProps {
   readonly language?: "en" | "hi";
 }
 
-/**
- * Builds SVG path coordinate string for PM2.5 data points.
- */
-function buildSvgPolyline(
+export function buildSvgPolyline(
   points: readonly HourlyPoint[],
   width: number,
   height: number,
@@ -46,7 +43,9 @@ function ChartHeader({
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div>
         <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-          {language === "hi" ? "24-घंटे का PM2.5 पूर्वानुमान" : "24-Hour PM2.5 Pollution Trajectory"}
+          {language === "hi"
+            ? "24-घंटे का PM2.5 पूर्वानुमान"
+            : "24-Hour PM2.5 Pollution Trajectory"}
         </h3>
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Cleanest window:{" "}
@@ -62,6 +61,8 @@ function ChartHeader({
       <button
         type="button"
         onClick={onToggleTable}
+        aria-expanded={showTable}
+        aria-controls="hourly-aqi-data-table"
         className="flex min-h-[44px] items-center px-2 text-xs font-semibold text-sky-600 hover:underline dark:text-sky-400"
       >
         {showTable ? "Hide data table" : "View accessible table"}
@@ -164,7 +165,8 @@ function SvgChart({
         role="img"
         aria-label={chartSummary}
       >
-        <title>{chartSummary}</title>
+        <title>24-Hour PM2.5 Forecast Trajectory</title>
+        <desc>{chartSummary}</desc>
         <ChartGridlines width={chartWidth} height={chartHeight} />
         <polyline
           fill="none"
@@ -180,25 +182,10 @@ function SvgChart({
   );
 }
 
-function TableHead(): React.JSX.Element {
-  return (
-    <thead className="bg-slate-50 dark:bg-slate-800">
-      <tr>
-        <th scope="col" className="p-2.5">
-          Time
-        </th>
-        <th scope="col" className="p-2.5">
-          PM2.5 (µg/m³)
-        </th>
-        <th scope="col" className="p-2.5">
-          AQI
-        </th>
-        <th scope="col" className="p-2.5">
-          Status
-        </th>
-      </tr>
-    </thead>
-  );
+function getPointStatusLabel(point: HourlyPoint): string {
+  if (point.isCleanest) return "Cleanest Window";
+  if (point.isWorst) return "Peak Smog";
+  return "Normal";
 }
 
 function AccessibleDataTable({
@@ -207,10 +194,17 @@ function AccessibleDataTable({
   readonly points: readonly HourlyPoint[];
 }): React.JSX.Element {
   return (
-    <div className="mt-2 overflow-x-auto">
+    <div id="hourly-aqi-data-table" className="mt-2 overflow-x-auto">
       <table className="w-full rounded-lg border border-slate-200 text-left text-xs dark:border-slate-800">
         <caption className="sr-only">Hourly particulate matter data points</caption>
-        <TableHead />
+        <thead className="bg-slate-50 dark:bg-slate-800">
+          <tr>
+            <th scope="col" className="p-2.5">Time</th>
+            <th scope="col" className="p-2.5">PM2.5 (µg/m³)</th>
+            <th scope="col" className="p-2.5">AQI</th>
+            <th scope="col" className="p-2.5">Status</th>
+          </tr>
+        </thead>
         <tbody>
           {points.map((p) => (
             <tr key={p.isoTime} className="border-t border-slate-100 dark:border-slate-800">
@@ -218,7 +212,7 @@ function AccessibleDataTable({
               <td className="p-2.5 font-medium">{p.pm25}</td>
               <td className="p-2.5">{p.aqi}</td>
               <td className="p-2.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                {p.isCleanest ? "Cleanest Window" : p.isWorst ? "Peak Smog" : "Normal"}
+                {getPointStatusLabel(p)}
               </td>
             </tr>
           ))}
@@ -238,7 +232,6 @@ export function HourlyChart({
   const chartWidth = 600;
   const chartHeight = 180;
   const polylineCoords = buildSvgPolyline(points, chartWidth, chartHeight, maxPm);
-
   const chartSummary = `Hourly PM2.5 forecast: Peak pollution reaches ${windows.worstPm25} µg/m³ at hour ${windows.worstHour}:00. Cleanest air is ${windows.cleanestPm25} µg/m³ at hour ${windows.cleanestHour}:00.`;
 
   return (
@@ -250,7 +243,7 @@ export function HourlyChart({
         language={language}
         windows={windows}
         showTable={showTable}
-        onToggleTable={() => setShowTable(!showTable)}
+        onToggleTable={() => setShowTable((prev) => !prev)}
       />
       <SvgChart
         points={points}
