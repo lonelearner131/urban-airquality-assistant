@@ -1,10 +1,7 @@
 import { selectAqiScale } from "@/domain/aqi/selectScale";
 import { modelExposure } from "@/domain/exposure/exposureModel";
 import { evaluateDelhiGrap } from "@/domain/grap/grapLookup";
-import {
-  type RuleSelectionResult,
-  selectApplicableRules,
-} from "@/domain/recommendations/ruleSelector";
+import { selectApplicableRules } from "@/domain/recommendations/ruleSelector";
 import { computeRiskAssessment } from "@/domain/risk/riskTier";
 import type {
   ComputedAqi,
@@ -12,10 +9,7 @@ import type {
   RecommendationRule,
   WindowRecommendation,
 } from "@/domain/types";
-import {
-  type HourlyOptimizationResult,
-  optimizeHourlyWindows,
-} from "@/domain/windows/windowOptimizer";
+import { optimizeHourlyWindows } from "@/domain/windows/windowOptimizer";
 import type { AiNarrative, CompletePlan } from "@/schemas/plan";
 import type { Profile } from "@/schemas/profile";
 import { type AirQualityService, airQualityService } from "./airQuality";
@@ -25,6 +19,9 @@ import {
 } from "./fallbackNarrative";
 import { type ContentGenerator, generateAiPlanNarrative } from "./gemini";
 import type { IAirQualityService, IPlanOrchestrator } from "./types";
+
+type RuleSelectionOutput = ReturnType<typeof selectApplicableRules>;
+type HourlyOptimizationOutput = ReturnType<typeof optimizeHourlyWindows>;
 
 export class PlanOrchestrator implements IPlanOrchestrator {
   constructor(
@@ -91,7 +88,7 @@ export class PlanOrchestrator implements IPlanOrchestrator {
 
   private buildHourlyWindows(
     aq: Awaited<ReturnType<IAirQualityService["getAirQuality"]>>,
-  ): HourlyOptimizationResult {
+  ): HourlyOptimizationOutput {
     const rawHourly = aq.hourlyTimes.map((time, i) => ({
       time,
       pm25: aq.hourlyPm25[i] ?? 25,
@@ -100,7 +97,7 @@ export class PlanOrchestrator implements IPlanOrchestrator {
     return optimizeHourlyWindows(rawHourly);
   }
 
-  private extractDomainRules(profile: Profile, aqiValue: number): RuleSelectionResult {
+  private extractDomainRules(profile: Profile, aqiValue: number): RuleSelectionOutput {
     return selectApplicableRules({
       aqi: aqiValue,
       vulnerabilities: profile.household,
@@ -116,7 +113,7 @@ export class PlanOrchestrator implements IPlanOrchestrator {
     computedAqi: ComputedAqi,
     riskAssessment: ReturnType<typeof computeRiskAssessment>,
     windows: WindowRecommendation,
-    hourlyPoints: HourlyOptimizationResult["enrichedPoints"],
+    hourlyPoints: HourlyOptimizationOutput["enrichedPoints"],
     exposure: ExposureEstimate,
     grap: ReturnType<typeof evaluateDelhiGrap>,
     selectedRules: readonly RecommendationRule[],
