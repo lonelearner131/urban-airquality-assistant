@@ -4,7 +4,18 @@ import React, { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
-import { LocationSearch, type LocationSelection } from "./LocationSearch";
+import { LocationSearch } from "./LocationSearch";
+import {
+  BUDGET_OPTIONS,
+  COMMUTE_OPTIONS,
+  COOKING_OPTIONS,
+  HEATING_OPTIONS,
+  INITIAL_FORM_STATE,
+  type ProfileFormState,
+  PURIFIER_OPTIONS,
+  toProfileInput,
+  VENTILATION_OPTIONS,
+} from "./profileFormOptions";
 import type { ProfileInput } from "@/schemas/profile";
 
 export interface ProfileFormProps {
@@ -12,47 +23,6 @@ export interface ProfileFormProps {
   readonly isLoading?: boolean;
   readonly language?: "en" | "hi";
 }
-
-interface ProfileFormState {
-  readonly location: LocationSelection;
-  readonly commuteMode: ProfileInput["commuteMode"];
-  readonly cookingFuel: ProfileInput["cookingFuel"];
-  readonly heatingMethod: NonNullable<ProfileInput["heatingMethod"]>;
-  readonly ownsPurifier: ProfileInput["ownsPurifier"];
-  readonly ventilation: ProfileInput["ventilationHabit"];
-  readonly budget: ProfileInput["budgetLevel"];
-  readonly hasChildren: boolean;
-  readonly hasElderly: boolean;
-  readonly hasPregnancy: boolean;
-  readonly hasRespiratory: boolean;
-  readonly schoolRun: boolean;
-  readonly morningWalk: boolean;
-  readonly exercise: boolean;
-}
-
-const DEFAULT_LOCATION: LocationSelection = {
-  name: "New Delhi, Delhi, India",
-  countryCode: "IN",
-  lat: 28.61,
-  lon: 77.21,
-};
-
-const INITIAL_FORM_STATE: ProfileFormState = {
-  location: DEFAULT_LOCATION,
-  commuteMode: "two-wheeler",
-  cookingFuel: "lpg",
-  heatingMethod: "none",
-  ownsPurifier: "none",
-  ventilation: "closed",
-  budget: "low",
-  hasChildren: true,
-  hasElderly: false,
-  hasPregnancy: false,
-  hasRespiratory: false,
-  schoolRun: true,
-  morningWalk: false,
-  exercise: false,
-};
 
 type StateUpdater = <K extends keyof ProfileFormState>(key: K, val: ProfileFormState[K]) => void;
 
@@ -153,55 +123,7 @@ function RoutineFieldset({
   );
 }
 
-const COMMUTE_OPTIONS: { value: ProfileInput["commuteMode"]; label: string }[] = [
-  { value: "two-wheeler", label: "Motorcycle / Scooter" },
-  { value: "walk", label: "Walking" },
-  { value: "cycle", label: "Bicycle" },
-  { value: "car", label: "Personal Car" },
-  { value: "bus", label: "Public Bus" },
-  { value: "metro", label: "Electric Metro / Train" },
-  { value: "carpool", label: "Carpool / Van" },
-  { value: "wfh", label: "Work From Home (WFH)" },
-];
-
-const COOKING_OPTIONS: { value: ProfileInput["cookingFuel"]; label: string }[] = [
-  { value: "lpg", label: "LPG Gas Cylinder" },
-  { value: "induction", label: "Electric Induction" },
-  { value: "piped_gas", label: "Piped Natural Gas (PNG)" },
-  { value: "biomass", label: "Biomass / Wood / Coal" },
-  { value: "electric", label: "Electric Coil / Hotplate" },
-];
-
-const HEATING_OPTIONS: {
-  value: NonNullable<ProfileInput["heatingMethod"]>;
-  label: string;
-}[] = [
-  { value: "none", label: "No space heating" },
-  { value: "electric_heater", label: "Electric blower / Oil heater" },
-  { value: "biomass_fire", label: "Wood / Fireplace / Angithi / Coal" },
-  { value: "heat_pump", label: "Heat Pump / AC Heater" },
-  { value: "central", label: "Central Heating" },
-];
-
-const PURIFIER_OPTIONS: { value: ProfileInput["ownsPurifier"]; label: string }[] = [
-  { value: "none", label: "None currently owned" },
-  { value: "hepa", label: "Commercial HEPA Purifier" },
-  { value: "diy", label: "DIY Box Fan / Filter" },
-];
-
-const VENTILATION_OPTIONS: { value: ProfileInput["ventilationHabit"]; label: string }[] = [
-  { value: "closed", label: "Windows closed all day" },
-  { value: "mixed", label: "Open only during clean hours" },
-  { value: "open", label: "Windows kept open" },
-];
-
-const BUDGET_OPTIONS: { value: ProfileInput["budgetLevel"]; label: string }[] = [
-  { value: "free", label: "Zero-Cost Only" },
-  { value: "low", label: "Low Budget (< ₹2,500 / $30)" },
-  { value: "flexible", label: "Flexible Budget" },
-];
-
-function CommuteAndCookingGrid({
+function LifestyleSelectGrid({
   state,
   update,
 }: {
@@ -209,7 +131,7 @@ function CommuteAndCookingGrid({
   readonly update: StateUpdater;
 }): React.JSX.Element {
   return (
-    <>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
       <Select
         label="Primary Commute Mode"
         value={state.commuteMode}
@@ -230,19 +152,6 @@ function CommuteAndCookingGrid({
         }
         options={HEATING_OPTIONS}
       />
-    </>
-  );
-}
-
-function PurifierAndBudgetGrid({
-  state,
-  update,
-}: {
-  readonly state: ProfileFormState;
-  readonly update: StateUpdater;
-}): React.JSX.Element {
-  return (
-    <>
       <Select
         label="Air Purifier Status"
         value={state.ownsPurifier}
@@ -261,7 +170,7 @@ function PurifierAndBudgetGrid({
         onChange={(e) => update("budget", e.target.value as ProfileInput["budgetLevel"])}
         options={BUDGET_OPTIONS}
       />
-    </>
+    </div>
   );
 }
 
@@ -278,34 +187,6 @@ function FormHeader({ isHindi }: { readonly isHindi: boolean }): React.JSX.Eleme
       </p>
     </div>
   );
-}
-
-function toProfileInput(s: ProfileFormState, language: "en" | "hi"): ProfileInput {
-  return {
-    locationName: s.location.name,
-    countryCode: s.location.countryCode,
-    latitude: s.location.lat,
-    longitude: s.location.lon,
-    household: {
-      hasChildren: s.hasChildren,
-      hasElderly: s.hasElderly,
-      hasPregnancy: s.hasPregnancy,
-      hasRespiratoryCondition: s.hasRespiratory,
-    },
-    commuteMode: s.commuteMode,
-    commuteHoursPerDay: 1.5,
-    cookingFuel: s.cookingFuel,
-    heatingMethod: s.heatingMethod,
-    ownsPurifier: s.ownsPurifier,
-    ventilationHabit: s.ventilation,
-    budgetLevel: s.budget,
-    outdoorRoutine: {
-      hasSchoolRun: s.schoolRun,
-      morningWalk: s.morningWalk,
-      vigorousExercise: s.exercise,
-    },
-    preferredLanguage: language,
-  };
 }
 
 export function ProfileForm({
@@ -333,10 +214,7 @@ export function ProfileForm({
       />
       <VulnerabilitiesFieldset isHindi={isHindi} state={state} update={update} />
       <RoutineFieldset isHindi={isHindi} state={state} update={update} />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <CommuteAndCookingGrid state={state} update={update} />
-        <PurifierAndBudgetGrid state={state} update={update} />
-      </div>
+      <LifestyleSelectGrid state={state} update={update} />
       <Button type="submit" variant="primary" size="lg" isLoading={isLoading} className="w-full">
         <Sparkles className="mr-2 h-5 w-5" aria-hidden="true" />
         {isHindi ? "योजना तैयार करें" : "Generate Action Plan"}
