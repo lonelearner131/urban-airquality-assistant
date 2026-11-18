@@ -77,7 +77,6 @@ export class PlanOrchestrator implements IPlanOrchestrator {
       },
       this.generator,
     );
-
     if (aiNarrative) return { narrative: aiNarrative, isAi: true };
     const fallback = buildDeterministicNarrative(
       profile.locationName,
@@ -112,38 +111,18 @@ export class PlanOrchestrator implements IPlanOrchestrator {
     });
   }
 
-  public async generatePlan(profile: Profile): Promise<CompletePlan> {
-    const aq = await this.aqService.getAirQuality(profile.latitude, profile.longitude);
-    const scale = selectAqiScale(profile.countryCode, profile.latitude, profile.longitude);
-    const computedAqi = scale.compute(aq.currentPm25, aq.currentPm10);
-    const riskAssessment = computeRiskAssessment(computedAqi.value, profile.household);
-    const { recommendation: windows, enrichedPoints: hourlyPoints } =
-      this.buildHourlyWindows(aq);
-    const rules = this.extractDomainRules(profile, computedAqi.value);
-    const exposure = this.computeExposure(
-      profile,
-      computedAqi,
-      windows,
-      rules.totalCo2SavingsKg,
-    );
-    const grap = evaluateDelhiGrap(
-      computedAqi.value,
-      profile.locationName,
-      profile.latitude,
-      profile.longitude,
-    );
-    const cleanWin = windows.safeWindows[0]?.label ?? `${windows.cleanestHour}:00`;
-
-    const { narrative: aiNarrative, isAi: isAiGenerated } = await this.resolveNarrative(
-      profile,
-      computedAqi,
-      riskAssessment.tier,
-      cleanWin,
-      windows.worstHour,
-      rules.rules,
-      exposure,
-    );
-
+  private assemblePlan(
+    profile: Profile,
+    computedAqi: ComputedAqi,
+    riskAssessment: ReturnType<typeof computeRiskAssessment>,
+    windows: WindowRecommendation,
+    hourlyPoints: HourlyOptimizationResult["enrichedPoints"],
+    exposure: ExposureEstimate,
+    grap: ReturnType<typeof evaluateDelhiGrap>,
+    selectedRules: readonly RecommendationRule[],
+    aiNarrative: AiNarrative,
+    isAiGenerated: boolean,
+  ): CompletePlan {
     return {
       profileId: `${profile.latitude}_${profile.longitude}_${Date.now()}`,
       locationName: profile.locationName,
@@ -157,10 +136,32 @@ export class PlanOrchestrator implements IPlanOrchestrator {
       hourlyPoints,
       exposure,
       grap,
-      selectedRules: rules.rules,
+      selectedRules,
       aiNarrative,
       isAiGenerated,
     };
+  }
+
+  public async generatePlan(profile: Profile): Promise<CompletePlan> {
+    const aq = await this.aqService.getAirQuality(profile.latitude, profile.longitude);
+    const scale = selectAqiScale(profile.countryCode, profile.latitude, profile.longitude);
+    const aqi = scale.compute(aq.currentPm25, aq.currentPm10);
+    const risk = computeRiskAssessment(aqi.value, profile.household);
+    const { recommendation: windows, enrichedPoints } = this.buildHourlyWindows(aq);
+    const rules = this.extractDomainRules(profile, aqi.value);
+    const exp = this.computeExposure(profile, aqi, windows, rules.totalCo2SavingsKg);
+    const grap = evaluateDelhiGrap(aqi.value, profile.locationName, profile.latitude, profile.longitude);
+    const cleanWin = windows.safeWindows[0]?.label ?? `${windows.cleanestHour}:00`;
+    const { narrative, isAi } = await this.resolveNarrative(
+      profile,
+      aqi,
+      risk.tier,
+      cleanWin,
+      windows.worstHour,
+      rules.rules,
+      exp,
+    );
+    return this.assemblePlan(profile, aqi, risk, windows, enrichedPoints, exp, grap, rules.rules, narrative, isAi);
   }
 }
 
