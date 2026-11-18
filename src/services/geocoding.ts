@@ -4,8 +4,20 @@
  */
 
 import { type FetchFn, resilientFetchJson } from "@/lib/http";
+import { sanitizeInput } from "@/lib/sanitize";
 import { type GeocodeResultItem, GeocodeResponseSchema } from "@/schemas/airQuality";
 import type { IGeocodingService } from "./types";
+
+const OPEN_METEO_GEOCODE_ENDPOINT = "https://geocoding-api.open-meteo.com/v1/search";
+
+function buildGeocodeUrl(query: string): string {
+  const url = new URL(OPEN_METEO_GEOCODE_ENDPOINT);
+  url.searchParams.set("name", query);
+  url.searchParams.set("count", "6");
+  url.searchParams.set("language", "en");
+  url.searchParams.set("format", "json");
+  return url.toString();
+}
 
 export class GeocodingService implements IGeocodingService {
   constructor(private readonly fetchFn: FetchFn = fetch) {}
@@ -17,13 +29,10 @@ export class GeocodingService implements IGeocodingService {
    * @returns List of geocoded result items.
    */
   public async search(query: string): Promise<readonly GeocodeResultItem[]> {
-    const trimmed = query.trim();
-    if (trimmed.length < 2) return [];
+    const cleaned = sanitizeInput(query, 100);
+    if (cleaned.length < 2) return [];
 
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
-      trimmed,
-    )}&count=6&language=en&format=json`;
-
+    const url = buildGeocodeUrl(cleaned);
     const rawData = await resilientFetchJson<unknown>(url, { timeoutMs: 5000 }, this.fetchFn);
     const parsed = GeocodeResponseSchema.safeParse(rawData);
 
