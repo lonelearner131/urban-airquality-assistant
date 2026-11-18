@@ -56,6 +56,32 @@ function buildSystemInstruction(lang: "en" | "hi"): string {
 }
 
 /**
+ * Invokes either the injected ContentGenerator or the @google/genai SDK.
+ */
+async function executePrompt(
+  prompt: string,
+  isJson: boolean,
+  model: string,
+  apiKey: string | undefined,
+  generator?: ContentGenerator,
+): Promise<string> {
+  if (generator) {
+    return generator(prompt, isJson);
+  }
+  const ai = new GoogleGenAI({ apiKey: apiKey ?? "" });
+  const response = await ai.models.generateContent({
+    model,
+    contents: prompt,
+    config: {
+      maxOutputTokens: 1000,
+      temperature: 0.2,
+    },
+  });
+
+  return response.text ?? "";
+}
+
+/**
  * Generates structured AI narrative for a validated plan using Gemini.
  */
 export async function generateAiPlanNarrative(
@@ -77,13 +103,8 @@ export async function generateAiPlanNarrative(
   ].join("\n");
 
   try {
-    const rawJson = generator
-      ? await generator(prompt, true)
-      : apiKey
-        ? await callGeminiSdk(prompt, env.GEMINI_MODEL, apiKey)
-        : "";
-
-    const parsedJson = JSON.parse(rawJson);
+    const rawJson = await executePrompt(prompt, true, env.GEMINI_MODEL, apiKey, generator);
+    const parsedJson: unknown = JSON.parse(rawJson);
     const validated = AiNarrativeSchema.safeParse(parsedJson);
     if (validated.success) return validated.data;
 
@@ -139,27 +160,8 @@ export async function answerAirQualityChat(
 
   const prompt = buildChatPrompt(payload);
   try {
-    if (generator) return await generator(prompt, false);
-    if (!apiKey) throw new Error("API key missing");
-    return await callGeminiSdk(prompt, env.GEMINI_MODEL, apiKey);
+    return await executePrompt(prompt, false, env.GEMINI_MODEL, apiKey, generator);
   } catch {
     return getErrorChatMessage(isHindi);
   }
-}
-
-/**
- * Invokes the @google/genai SDK models.generateContent API.
- */
-async function callGeminiSdk(prompt: string, model: string, apiKey: string): Promise<string> {
-  const ai = new GoogleGenAI({ apiKey });
-  const response = await ai.models.generateContent({
-    model,
-    contents: prompt,
-    config: {
-      maxOutputTokens: 1000,
-      temperature: 0.2,
-    },
-  });
-
-  return response.text ?? "";
 }
