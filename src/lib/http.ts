@@ -14,6 +14,21 @@ export interface RequestOptions extends RequestInit {
 export type FetchFn = typeof fetch;
 
 /**
+ * Validates that outbound requests strictly use HTTPS to prevent SSRF over insecure schemes.
+ */
+function assertHttpsUrl(url: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new UpstreamServiceError(`Invalid URL format: ${url}`);
+  }
+  if (parsed.protocol !== "https:") {
+    throw new UpstreamServiceError(`Blocked non-HTTPS request to ${url}`);
+  }
+}
+
+/**
  * Performs a single fetch request with an AbortController timeout.
  */
 async function fetchWithTimeout(
@@ -21,6 +36,7 @@ async function fetchWithTimeout(
   options: RequestOptions,
   customFetch: FetchFn,
 ): Promise<Response> {
+  assertHttpsUrl(url);
   const timeoutMs = options.timeoutMs ?? NETWORK_CONFIG.HTTP_TIMEOUT_MS;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
