@@ -1,7 +1,7 @@
 import React from "react";
 import { AlertTriangle, CheckCircle, ShieldAlert, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import type { AqiCategory, ComputedAqi, RiskAssessment } from "@/domain/types";
+import type { AqiCategory, ComputedAqi, RiskAssessment, RiskTier } from "@/domain/types";
 
 export interface AqiSummaryProps {
   readonly computedAqi: ComputedAqi;
@@ -23,6 +23,12 @@ function CategoryIcon({ band }: { readonly band: string }): React.JSX.Element {
     );
   }
   return <ShieldAlert className="h-8 w-8 text-rose-600 dark:text-rose-400" aria-hidden="true" />;
+}
+
+function getRiskBadgeVariant(tier: RiskTier): "success" | "warning" | "danger" {
+  if (tier === "LOW") return "success";
+  if (tier === "MODERATE") return "warning";
+  return "danger";
 }
 
 function AqiHeroCard({
@@ -48,7 +54,7 @@ function AqiHeroCard({
           <span className="text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
             {aqi}
           </span>
-          <span className="text-xs font-semibold uppercase text-slate-500">
+          <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
             {scale === "INDIA_NAQI" ? "India NAQI" : "US EPA AQI"}
           </span>
         </div>
@@ -56,7 +62,7 @@ function AqiHeroCard({
           <span className="text-base font-semibold text-slate-900 dark:text-slate-100">
             {isHindi ? category.hindiLabel : category.label}
           </span>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             · Dominant: {dominantPollutant.toUpperCase()}
           </span>
         </div>
@@ -72,17 +78,12 @@ function RiskCard({
   readonly riskAssessment: RiskAssessment;
   readonly isHindi: boolean;
 }): React.JSX.Element {
-  const variant =
-    riskAssessment.tier === "LOW"
-      ? "success"
-      : riskAssessment.tier === "MODERATE"
-        ? "warning"
-        : "danger";
+  const variant = getRiskBadgeVariant(riskAssessment.tier);
 
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           {isHindi ? "व्यक्तिगत जोखिम स्तर" : "Personal Risk Tier"}
         </span>
         <Badge variant={variant}>
