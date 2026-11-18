@@ -6,45 +6,55 @@ export interface HeaderProps {
   readonly onLanguageChange: (lang: "en" | "hi") => void;
 }
 
-function LanguageSwitcher({
-  language,
-  onLanguageChange,
+function LanguageButton({
+  active,
+  label,
+  ariaLabel,
+  langAttr,
+  onClick,
 }: {
-  readonly language: "en" | "hi";
-  readonly onLanguageChange: (lang: "en" | "hi") => void;
+  readonly active: boolean;
+  readonly label: string;
+  readonly ariaLabel: string;
+  readonly langAttr?: string;
+  readonly onClick: () => void;
 }): React.JSX.Element {
+  const activeStyle = active
+    ? "border-sky-600 bg-sky-600 text-white"
+    : "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300";
+  return (
+    <button
+      type="button"
+      lang={langAttr}
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={ariaLabel}
+      className={`min-h-[44px] min-w-[44px] rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${activeStyle}`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function LanguageSwitcher({ language, onLanguageChange }: HeaderProps): React.JSX.Element {
   return (
     <div className="flex items-center gap-2" role="group" aria-label="Language selection">
       <span className="mr-1 hidden text-xs font-medium text-slate-500 sm:inline dark:text-slate-400">
         Language:
       </span>
-      <button
-        type="button"
+      <LanguageButton
+        active={language === "en"}
+        label="EN"
+        ariaLabel="English"
         onClick={() => onLanguageChange("en")}
-        aria-pressed={language === "en"}
-        aria-label="English"
-        className={`min-h-[44px] min-w-[44px] rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
-          language === "en"
-            ? "border-sky-600 bg-sky-600 text-white"
-            : "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-        }`}
-      >
-        EN
-      </button>
-      <button
-        type="button"
-        lang="hi"
+      />
+      <LanguageButton
+        active={language === "hi"}
+        label="हिन्दी"
+        ariaLabel="Hindi (हिन्दी)"
+        langAttr="hi"
         onClick={() => onLanguageChange("hi")}
-        aria-pressed={language === "hi"}
-        aria-label="Hindi (हिन्दी)"
-        className={`min-h-[44px] min-w-[44px] rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
-          language === "hi"
-            ? "border-sky-600 bg-sky-600 text-white"
-            : "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-        }`}
-      >
-        हिन्दी
-      </button>
+      />
     </div>
   );
 }
