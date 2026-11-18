@@ -154,18 +154,6 @@ SmogShield grounds every recommendation and calculation in peer-reviewed environ
    ```
    This executes: `format:check` $\to$ `lint` $\to$ `typecheck` $\to$ `test:coverage` $\to$ `build`.
 
----
-
-## ☁️ Deployment on Vercel
-
-1. Push your repository to GitHub (`main` branch).
-2. Import the repository into your [Vercel Dashboard](https://vercel.com/new).
-3. Under **Environment Variables**, configure:
-   - `GEMINI_API_KEY`: _(Your Google AI Studio API key)_
-   - `GEMINI_MODEL`: `gemini-3.1-flash-lite` _(Default)_
-4. Click **Deploy**. Vercel will build and host the Next.js App Router application with edge-ready API routes.
-
----
 
 ## 📜 Medical & Statutory Disclaimer
 
